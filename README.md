@@ -11,11 +11,10 @@ content is treated as untrusted data: dependencies and scripts are never
 installed or run during inspection. The web UI lets a user review and
 explicitly approve the plan.
 
-Execution currently returns `execution_unavailable`. Docker access is detected
-on the development machine, but no trusted image policy, network isolation
-policy, preview proxy, or lifecycle manager has been implemented yet. It would
-be unsafe to run arbitrary repositories on the API host, so this feature is
-disabled intentionally.
+Execution uses a fail-closed Docker provider when explicitly enabled and
+operator-approved runtime images are available. In the default configuration
+it returns `execution_unavailable`; no image is trusted or pulled
+automatically.
 
 ## Run in GitHub Codespaces
 
@@ -56,6 +55,36 @@ Codespaces hostname. If using a different origin, configure
 The backend supports optional limits including
 `REPORUNNER_MAX_CLONE_SECONDS`, `REPORUNNER_MAX_FILES`,
 `REPORUNNER_MAX_REPO_BYTES`, and `REPORUNNER_WORKSPACE_ROOT`.
+
+## Isolated execution provider
+
+Execution is disabled unless all of the following are configured by the
+operator:
+
+- `REPORUNNER_EXECUTION_ENABLED=true`
+- `REPORUNNER_PYTHON_RUNTIME_IMAGE` and/or
+  `REPORUNNER_NODE_RUNTIME_IMAGE` set to approved, locally available image
+  references (prefer immutable digest references)
+- Docker is reachable and reports AppArmor, seccomp, and cgroup namespaces
+
+Images are never pulled automatically. The provider only runs fixed policy
+commands (`python -m compileall -q .` for Python projects and
+`node --check index.js` for Node projects); it does not execute README
+instructions or arbitrary manifest scripts. Each run is cloned into a temporary
+workspace and started in a disposable container with:
+
+- non-root UID/GID `65532:65532`
+- no network, read-only root filesystem, and a read-only repository mount
+- all Linux capabilities dropped and `no-new-privileges`
+- default seccomp profile, AppArmor daemon profile, and cgroup namespace
+- 1 CPU, 512 MiB memory, 128 processes, a 30-second timeout, and a bounded log
+- a `noexec`/`nosuid`/`nodev` 64 MiB `/tmp`
+- forced container removal and host workspace cleanup on success and failure
+
+This is not a general-purpose arbitrary-code runner. Preview serving,
+dependency installation, package lifecycle scripts, and repository startup
+commands remain disabled until a separately reviewed policy supports them.
+The provider must remain disabled if any prerequisite cannot be verified.
 
 ## Run the frontend
 
@@ -99,8 +128,9 @@ API and was rejected or failed.
    `{"repository_url":"https://github.com/owner/repository"}`.
 2. Review the returned `awaiting_approval` job and its plan.
 3. `POST /api/v1/jobs/{job_id}/approve` with `{"approved":true}`.
-4. `POST /api/v1/jobs/{job_id}/start` reports
-   `execution_unavailable` until a verified provider is configured.
+4. `POST /api/v1/jobs/{job_id}/start` runs the fixed provider check only when
+   a verified provider is configured; otherwise it reports
+   `execution_unavailable`.
 5. `GET /api/v1/jobs/{job_id}`, `/logs`, and `/preview` expose status, activity,
    and only an actually available preview (currently none).
 

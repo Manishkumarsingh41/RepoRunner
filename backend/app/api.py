@@ -3,7 +3,7 @@ import uuid
 
 from fastapi import APIRouter, HTTPException
 
-from app.execution import provider
+from app.execution import ExecutionFailedError, ExecutionUnavailableError, provider
 from app.inspection import inspect_repository
 from app.models import ApprovalRequest, InspectRequest, Job, JobState
 
@@ -65,10 +65,17 @@ def start(job_id: str):
     if job.state != JobState.awaiting_approval:
         raise HTTPException(status_code=409, detail="Job cannot be started in its current state")
     try:
-        provider.start(job.id, job.repository.plan.commands if job.repository else [])
-        job.state = JobState.running
-    except RuntimeError as exc:
+        if not job.repository:
+            raise RuntimeError("Execution unavailable: repository details are missing")
+        output = provider.start(job.id, job.repository.url, job.repository.project_type)
+        job.state = JobState.succeeded
+        job.logs.append(output)
+    except ExecutionUnavailableError as exc:
         job.state = JobState.execution_unavailable
+        job.error = str(exc)
+        job.logs.append(job.error)
+    except ExecutionFailedError as exc:
+        job.state = JobState.failed
         job.error = str(exc)
         job.logs.append(job.error)
     return job

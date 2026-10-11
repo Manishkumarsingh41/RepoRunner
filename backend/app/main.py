@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import router
 from app.config import settings
+from app.execution import provider
 
 app = FastAPI(
     title="RepoRunner API",
@@ -26,4 +27,5 @@ def root():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "execution": settings.execution_status}
+    available, _ = provider.availability()
+    return {"status": "ok", "execution": "execution_available" if available else "execution_unavailable"}
