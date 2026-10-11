@@ -1,0 +1,28 @@
+:root { font-family: Inter, system-ui, sans-serif; color: #e9edf5; background: #0e1117; line-height: 1.5; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+main { width: min(100% - 2rem, 720px); margin: 0 auto; padding: 2rem 0 4rem; }
+header { padding: 1rem 0 2rem; }
+h1 { font-size: clamp(2rem, 9vw, 3.5rem); line-height: 1.05; margin: .35rem 0 1rem; }
+h2, h3 { margin-top: 0; }
+h3 { margin-top: 1.5rem; font-size: 1rem; }
+.muted { color: #9ca8ba; }
+.eyebrow { color: #8b9cff; font-size: .75rem; font-weight: 700; letter-spacing: .12em; margin: 0; }
+.card { background: #171c25; border: 1px solid #293241; border-radius: 18px; padding: 1.2rem; margin-top: 1rem; }
+label { display: block; font-weight: 700; margin-bottom: .5rem; }
+.url-row { display: flex; gap: .6rem; }
+input { min-width: 0; flex: 1; border: 1px solid #3a4557; background: #0e1117; color: inherit; border-radius: 10px; padding: .85rem; font-size: 1rem; }
+button { border: 0; border-radius: 10px; background: #8b9cff; color: #0e1117; font-weight: 700; padding: .8rem 1rem; min-height: 46px; cursor: pointer; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+.secondary { background: #293241; color: #e9edf5; }
+.actions { display: flex; gap: .6rem; flex-wrap: wrap; }
+.status-row, .summary { display: flex; align-items: center; gap: .75rem; justify-content: space-between; }
+.summary { justify-content: flex-start; flex-wrap: wrap; color: #b9c3d4; margin: 1rem 0; }
+.status { border-radius: 99px; padding: .3rem .6rem; font-size: .75rem; font-weight: 700; background: #293241; text-transform: capitalize; }
+.awaiting_approval { background: #4c3d1a; color: #ffd77a; }
+.execution_unavailable, .failed { background: #512532; color: #ff9db0; }
+li { margin: .55rem 0; overflow-wrap: anywhere; }
+code, pre { font-family: ui-monospace, monospace; }
+pre { white-space: pre-wrap; background: #0e1117; padding: .8rem; border-radius: 10px; color: #b9c3d4; }
+.error { color: #ff9db0; }
+@media (max-width: 480px) { .url-row { flex-direction: column; } button { width: 100%; } .status-row { align-items: flex-start; flex-direction: column; } }
